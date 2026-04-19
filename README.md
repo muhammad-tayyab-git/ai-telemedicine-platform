@@ -110,4 +110,4 @@ cd ai-image-service && pip install -r requirements.txt && uvicorn main:app --rel
 
 ## License
 
-Academic use only — Óbuda University thesis project.
+Academic use only — Debrecen University thesis project.
