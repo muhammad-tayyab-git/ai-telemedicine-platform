@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+
+  data:
+    mongodb:
+      auto-index-creation: false
+      uri: mongodb://localhost:27017/test
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+
+jwt:
+  secret: dGVzdFNlY3JldEtleUZvclRlc3RpbmdPbmx5TWluaW11bTMyQ2hhcnM=
+  expiration-ms: 86400000
+
+ai:
+  symptom-service:
+    url: http://localhost:8001
+  image-service:
+    url: http://localhost:8002
