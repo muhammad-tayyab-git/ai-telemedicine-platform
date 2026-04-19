@@ -1,6 +1,6 @@
 # AI-Enhanced Telemedicine Platform
 
-> Bachelor's Thesis — Óbuda University  
+> Bachelor's Thesis — Debrecen University  
 > Author: **Tayyab Muhammad**  
 > Supervisor: Dr. Major Sándor Roland
 
