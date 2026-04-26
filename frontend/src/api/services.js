@@ -8,8 +8,8 @@ export const authApi = {
 
 // ─── Symptoms ─────────────────────────────────────────────────────────────────
 export const symptomApi = {
-  analyze:  (data)      => api.post('/symptoms/analyze', data),
-  getAll:   (patientId) => api.get(`/symptoms/${patientId}`),
+  analyze:      (data) => api.post('/symptoms/analyze', data),
+  getMyReports: ()     => api.get('/symptoms/my-reports'),
 }
 
 // ─── Images ───────────────────────────────────────────────────────────────────
@@ -17,15 +17,14 @@ export const imageApi = {
   analyze: (formData) => api.post('/images/analyze', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  getAll: (patientId) => api.get(`/images/${patientId}`),
 }
 
 // ─── Appointments ─────────────────────────────────────────────────────────────
 export const appointmentApi = {
-  getAll:   ()     => api.get('/appointments'),
-  create:   (data) => api.post('/appointments', data),
-  update:   (id, data) => api.put(`/appointments/${id}`, data),
-  cancel:   (id)   => api.patch(`/appointments/${id}/cancel`),
+  getAll:  ()          => api.get('/appointments'),
+  create:  (data)      => api.post('/appointments', data),
+  update:  (id, data)  => api.put(`/appointments/${id}`, data),
+  cancel:  (id)        => api.patch(`/appointments/${id}/cancel`),
 }
 
 // ─── Patients ─────────────────────────────────────────────────────────────────
