@@ -1,34 +1,20 @@
 """
 Symptom triage model using ClinicalBERT.
-
-Phase 1: Uses a rule-based fallback so the service starts immediately.
-Phase 4: Replace load_model() with actual fine-tuned ClinicalBERT weights.
-
-To fine-tune:
-  from transformers import AutoModelForSequenceClassification, AutoTokenizer
-  model = AutoModelForSequenceClassification.from_pretrained("medicalai/ClinicalBERT", num_labels=N)
-  tokenizer = AutoTokenizer.from_pretrained("medicalai/ClinicalBERT")
-  # ... training loop ...
-  model.save_pretrained("./models/symptom_classifier")
-  tokenizer.save_pretrained("./models/symptom_classifier")
+Phase 1: Rule-based fallback so the service starts immediately.
+Phase 4: Replace load_model() with fine-tuned ClinicalBERT weights.
 """
 
-import os
 import logging
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-
 MODEL_PATH = Path("./models/symptom_classifier")
-
 _model = None
 _tokenizer = None
 
 
 def load_model():
-    """Load ClinicalBERT model if weights exist, else use rule-based fallback."""
     global _model, _tokenizer
-
     if MODEL_PATH.exists():
         try:
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -40,24 +26,17 @@ def load_model():
         except Exception as e:
             logger.warning("Failed to load model: %s — using rule-based fallback", e)
     else:
-        logger.info("No model weights found at %s — using rule-based fallback", MODEL_PATH)
+        logger.info("No model weights found — using rule-based fallback")
 
 
 def predict(symptoms_text: str) -> dict:
-    """
-    Return prediction dict.
-    If fine-tuned model is loaded, use it.
-    Otherwise use keyword-based rules as a placeholder.
-    """
     if _model is not None and _tokenizer is not None:
         return _predict_with_bert(symptoms_text)
     return _predict_rule_based(symptoms_text)
 
 
 def _predict_with_bert(symptoms_text: str) -> dict:
-    """BERT-based classification — used once model weights are available."""
     import torch
-
     LABELS = [
         "Common Cold", "Influenza", "COVID-19", "Pneumonia",
         "Gastroenteritis", "Migraine", "Hypertension", "Diabetes",
@@ -69,23 +48,15 @@ def _predict_with_bert(symptoms_text: str) -> dict:
         "Hypertension": "HIGH", "Diabetes": "HIGH",
         "Appendicitis": "CRITICAL", "Anemia": "MEDIUM"
     }
-
-    inputs = _tokenizer(
-        symptoms_text, return_tensors="pt",
-        max_length=512, truncation=True, padding=True
-    )
-
+    inputs = _tokenizer(symptoms_text, return_tensors="pt", max_length=512, truncation=True, padding=True)
     with torch.no_grad():
         outputs = _model(**inputs)
         probs = torch.softmax(outputs.logits, dim=-1)[0]
-
     top_idx = int(probs.argmax())
     top_label = LABELS[top_idx] if top_idx < len(LABELS) else "Unknown"
     confidence = float(probs[top_idx])
-
     alt_indices = probs.topk(3).indices.tolist()
     alternatives = [LABELS[i] for i in alt_indices if i != top_idx and i < len(LABELS)]
-
     return {
         "predicted_condition": top_label,
         "severity_level": SEVERITY_MAP.get(top_label, "MEDIUM"),
@@ -96,28 +67,97 @@ def _predict_with_bert(symptoms_text: str) -> dict:
 
 
 def _predict_rule_based(symptoms_text: str) -> dict:
-    """Keyword-based placeholder — replace with BERT in Phase 4."""
     text = symptoms_text.lower()
 
     rules = [
-        (["chest pain", "shortness of breath", "difficulty breathing"], "Cardiac/Respiratory Emergency", "CRITICAL"),
-        (["fever", "cough", "loss of smell", "loss of taste"], "COVID-19 (suspected)", "HIGH"),
-        (["fever", "severe headache", "stiff neck", "rash"], "Meningitis (suspected)", "CRITICAL"),
-        (["fever", "cough", "chest pain"], "Pneumonia (suspected)", "HIGH"),
-        (["headache", "fever", "body ache", "fatigue"], "Influenza", "MEDIUM"),
-        (["nausea", "vomiting", "diarrhea", "stomach pain"], "Gastroenteritis", "MEDIUM"),
-        (["headache", "nausea", "light sensitivity"], "Migraine", "MEDIUM"),
-        (["runny nose", "sore throat", "sneezing", "mild fever"], "Common Cold", "LOW"),
-        (["fatigue", "pale skin", "weakness", "dizziness"], "Anemia (suspected)", "MEDIUM"),
-        (["excessive thirst", "frequent urination", "fatigue"], "Diabetes (suspected)", "HIGH"),
+        (
+            ["chest pain", "shortness of breath", "difficulty breathing", "heart beating fast", "heart is beating fast"],
+            "Cardiac / Respiratory Emergency",
+            "CRITICAL",
+            0.91
+        ),
+        (
+            ["fever", "cough", "loss of smell", "loss of taste"],
+            "COVID-19 (suspected)",
+            "HIGH",
+            0.82
+        ),
+        (
+            ["fever", "severe headache", "stiff neck", "rash"],
+            "Meningitis (suspected)",
+            "CRITICAL",
+            0.88
+        ),
+        (
+            ["fever", "cough", "chest pain"],
+            "Pneumonia (suspected)",
+            "HIGH",
+            0.78
+        ),
+        (
+            ["red eyes", "watery eyes", "eye irritation", "swollen eyes", "itchy eyes"],
+            "Allergic Conjunctivitis",
+            "LOW",
+            0.85
+        ),
+        (
+            ["irritation", "eyes", "red", "watering", "flu"],
+            "Allergic Conjunctivitis with Rhinitis",
+            "LOW",
+            0.80
+        ),
+        (
+            ["headache", "fever", "body ache", "fatigue", "weak"],
+            "Influenza",
+            "MEDIUM",
+            0.84
+        ),
+        (
+            ["nausea", "vomiting", "diarrhea", "stomach pain"],
+            "Gastroenteritis",
+            "MEDIUM",
+            0.79
+        ),
+        (
+            ["headache", "nausea", "light sensitivity"],
+            "Migraine",
+            "MEDIUM",
+            0.76
+        ),
+        (
+            ["runny nose", "sore throat", "sneezing", "mild fever"],
+            "Common Cold",
+            "LOW",
+            0.88
+        ),
+        (
+            ["runny nose", "sore throat", "sneezing"],
+            "Common Cold",
+            "LOW",
+            0.83
+        ),
+        (
+            ["fatigue", "pale skin", "weakness", "dizziness"],
+            "Anemia (suspected)",
+            "MEDIUM",
+            0.72
+        ),
+        (
+            ["excessive thirst", "frequent urination", "fatigue"],
+            "Diabetes (suspected)",
+            "HIGH",
+            0.77
+        ),
     ]
 
-    for keywords, condition, severity in rules:
-        if sum(1 for kw in keywords if kw in text) >= 2:
+    for keywords, condition, severity, confidence in rules:
+        matched = sum(1 for kw in keywords if kw in text)
+        threshold = 2 if len(keywords) >= 3 else 1
+        if matched >= threshold:
             return {
                 "predicted_condition": condition,
                 "severity_level": severity,
-                "confidence_score": 0.72,
+                "confidence_score": confidence,
                 "recommendation": _build_recommendation(condition, severity),
                 "alternative_conditions": [],
             }
