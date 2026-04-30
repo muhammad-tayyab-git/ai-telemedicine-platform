@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { authApi } from '../../api/services'
 import { useAuthStore } from '../../store/authStore'
 
 export default function LoginPage() {
-  const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [loading, setLoading] = useState(false)
 
@@ -19,10 +18,11 @@ export default function LoginPage() {
       const { token, user } = res.data.data
       setAuth(token, user)
       toast.success(`Welcome back, ${user.firstName}!`)
-      navigate(user.role === 'DOCTOR' ? '/doctor' : '/patient')
+      setTimeout(() => {
+        window.location.href = user.role === 'DOCTOR' ? '/doctor' : '/patient'
+      }, 300)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Login failed. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
