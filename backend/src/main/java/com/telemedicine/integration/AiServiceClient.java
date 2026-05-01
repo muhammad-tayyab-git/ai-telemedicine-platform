@@ -7,8 +7,11 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -31,9 +34,14 @@ public class AiServiceClient {
     public SymptomPredictionResponse analyzeSymptoms(String symptomsText) {
         try {
             SymptomRequest request = new SymptomRequest(symptomsText);
-            ResponseEntity<SymptomPredictionResponse> response = restTemplate.postForEntity(
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<SymptomRequest> entity = new HttpEntity<>(request, headers);
+
+            ResponseEntity<SymptomPredictionResponse> response = restTemplate.exchange(
                 symptomServiceUrl + "/predict",
-                request,
+                HttpMethod.POST,
+                entity,
                 SymptomPredictionResponse.class
             );
             log.info("AI symptom response: {}", response.getBody());
@@ -45,19 +53,37 @@ public class AiServiceClient {
     }
 
     // ─── Image Screening ──────────────────────────────────────────────────────
+    // Python FastAPI expects multipart/form-data with a 'file' field
 
     public ImageAnalysisResponse analyzeImage(byte[] imageBytes, String filename) {
         try {
+            // Build multipart body exactly as FastAPI expects
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.set("X-Filename", filename);
-            HttpEntity<byte[]> entity = new HttpEntity<>(imageBytes, headers);
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            ByteArrayResource fileResource = new ByteArrayResource(imageBytes) {
+                @Override
+                public String getFilename() {
+                    return filename;
+                }
+            };
+
+            HttpHeaders fileHeaders = new HttpHeaders();
+            fileHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            HttpEntity<ByteArrayResource> filePart = new HttpEntity<>(fileResource, fileHeaders);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", filePart);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
             ResponseEntity<ImageAnalysisResponse> response = restTemplate.exchange(
                 imageServiceUrl + "/analyze",
                 HttpMethod.POST,
-                entity,
+                requestEntity,
                 ImageAnalysisResponse.class
             );
+            log.info("AI image response: {}", response.getBody());
             return response.getBody();
         } catch (Exception e) {
             log.error("Image AI service error: {}", e.getMessage());
@@ -74,19 +100,14 @@ public class AiServiceClient {
 
     @Data @NoArgsConstructor @AllArgsConstructor
     public static class SymptomPredictionResponse {
-
         @JsonProperty("predicted_condition")
         private String predictedCondition;
-
         @JsonProperty("severity_level")
         private String severityLevel;
-
         @JsonProperty("confidence_score")
         private Double confidenceScore;
-
         @JsonProperty("recommendation")
         private String recommendation;
-
         @JsonProperty("alternative_conditions")
         private List<String> alternativeConditions;
 
@@ -103,22 +124,16 @@ public class AiServiceClient {
 
     @Data @NoArgsConstructor @AllArgsConstructor
     public static class ImageAnalysisResponse {
-
         @JsonProperty("finding")
         private String finding;
-
         @JsonProperty("confidence_score")
         private Double confidenceScore;
-
         @JsonProperty("recommendation")
         private String recommendation;
-
         @JsonProperty("image_type")
         private String imageType;
-
         @JsonProperty("requires_urgent_review")
         private Boolean requiresUrgentReview;
-
         @JsonProperty("alternative_findings")
         private List<String> alternativeFindings;
 

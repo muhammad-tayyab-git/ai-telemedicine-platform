@@ -21,21 +21,16 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
   # ─── MongoDB ────────────────────────────────────────────────────────────────
   data:
     mongodb:
-      host: ${MONGO_HOST:localhost}
-      port: ${MONGO_PORT:27017}
-      database: ${MONGO_DB:telemedicine_logs}
-      username: ${MONGO_USERNAME:mongo}
-      password: ${MONGO_PASSWORD:mongo}
+      uri: mongodb://${MONGO_USERNAME:mongo}:${MONGO_PASSWORD:mongo}@${MONGO_HOST:localhost}:${MONGO_PORT:27017}/${MONGO_DB:telemedicine_logs}?authSource=admin
 
 # ─── JWT ────────────────────────────────────────────────────────────────────
 jwt:
-  secret: ${JWT_SECRET:defaultSecretKeyForDevOnlyMustBeChangedInProduction}
+  secret: ${JWT_SECRET:dGVzdFNlY3JldEtleUZvclRlc3RpbmdPbmx5TWluaW11bTMyQ2hhcnM=}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 # ─── AI Microservices ────────────────────────────────────────────────────────
@@ -68,4 +63,3 @@ logging:
   level:
     com.telemedicine: DEBUG
     org.springframework.security: INFO
-    org.hibernate.SQL: DEBUG
