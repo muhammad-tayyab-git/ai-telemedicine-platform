@@ -1,89 +1,66 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import {
-  LayoutDashboard, Activity, ImagePlus,
-  Calendar, Stethoscope, LogOut, User
-} from 'lucide-react'
+import { LayoutDashboard, Activity, ImagePlus, Calendar, Stethoscope, LogOut, ChevronRight } from 'lucide-react'
 
 const patientNav = [
-  { to: '/patient',             label: 'Dashboard',    icon: LayoutDashboard },
-  { to: '/patient/symptoms',    label: 'Symptom Check', icon: Activity },
-  { to: '/patient/images',      label: 'Image Upload',  icon: ImagePlus },
-  { to: '/patient/appointments',label: 'Appointments',  icon: Calendar },
+  { to: '/patient',              label: 'Dashboard',       icon: LayoutDashboard, end: true },
+  { to: '/patient/symptoms',     label: 'Symptom Check',   icon: Activity },
+  { to: '/patient/images',       label: 'Image Screening', icon: ImagePlus },
+  { to: '/patient/appointments', label: 'Appointments',    icon: Calendar },
 ]
-
 const doctorNav = [
-  { to: '/doctor',                  label: 'Dashboard',      icon: LayoutDashboard },
-  { to: '/doctor/consultations',    label: 'Consultations',  icon: Stethoscope },
-  { to: '/doctor/appointments',     label: 'Appointments',   icon: Calendar },
+  { to: '/doctor',                 label: 'Dashboard',     icon: LayoutDashboard, end: true },
+  { to: '/doctor/consultations',   label: 'Consultations', icon: Stethoscope },
+  { to: '/doctor/appointments',    label: 'Appointments',  icon: Calendar },
 ]
 
 export default function Layout() {
   const { user, logout } = useAuthStore()
   const nav = user?.role === 'DOCTOR' ? doctorNav : patientNav
+  const initials = `${user?.firstName?.[0]||''}${user?.lastName?.[0]||''}`
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Logo */}
-        <div className="px-6 py-5 border-b border-gray-200">
-          <h1 className="text-lg font-semibold text-primary-800">TeleMedicine</h1>
-          <p className="text-xs text-gray-400 mt-0.5">AI-Enhanced Platform</p>
+    <div style={{display:'flex',height:'100vh',background:'var(--color-background-tertiary)'}}>
+      <aside style={{width:'232px',flexShrink:0,background:'var(--color-background-primary)',borderRight:'0.5px solid var(--color-border-tertiary)',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'18px 16px 14px',borderBottom:'0.5px solid var(--color-border-tertiary)',display:'flex',alignItems:'center',gap:'10px'}}>
+          <div style={{width:'30px',height:'30px',borderRadius:'8px',background:'var(--color-background-info)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <Activity size={15} color='var(--color-text-info)'/>
+          </div>
+          <div>
+            <div style={{fontSize:'13px',fontWeight:'500',color:'var(--color-text-primary)'}}>TeleMed AI</div>
+            <div style={{fontSize:'11px',color:'var(--color-text-tertiary)'}}>{user?.role==='DOCTOR'?'Doctor Portal':'Patient Portal'}</div>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/patient' || to === '/doctor'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary-50 text-primary-800'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`
-              }
-            >
-              <Icon size={18} />
-              {label}
+        <nav style={{flex:1,padding:'10px 8px',display:'flex',flexDirection:'column',gap:'1px'}}>
+          <div style={{fontSize:'10px',fontWeight:'500',color:'var(--color-text-tertiary)',letterSpacing:'.07em',textTransform:'uppercase',padding:'8px 8px 4px'}}>Menu</div>
+          {nav.map(({to,label,icon:Icon,end})=>(
+            <NavLink key={to} to={to} end={end} style={({isActive})=>({
+              display:'flex',alignItems:'center',gap:'9px',padding:'8px 10px',borderRadius:'8px',
+              fontSize:'13px',fontWeight:isActive?'500':'400',
+              color:isActive?'var(--color-text-info)':'var(--color-text-secondary)',
+              background:isActive?'var(--color-background-info)':'transparent',
+              textDecoration:'none',transition:'all .15s',
+            })}>
+              <Icon size={15}/><span style={{flex:1}}>{label}</span><ChevronRight size={11} style={{opacity:.35}}/>
             </NavLink>
           ))}
         </nav>
 
-        {/* User info + logout */}
-        <div className="px-4 py-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-              <User size={16} className="text-primary-800" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-400 capitalize">
-                {user?.role?.toLowerCase()}
-              </p>
+        <div style={{padding:'10px 8px',borderTop:'0.5px solid var(--color-border-tertiary)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'9px',padding:'8px 10px',borderRadius:'8px',background:'var(--color-background-secondary)',marginBottom:'4px'}}>
+            <div style={{width:'30px',height:'30px',borderRadius:'50%',background:'var(--color-background-info)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:'500',color:'var(--color-text-info)',flexShrink:0}}>{initials}</div>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:'12px',fontWeight:'500',color:'var(--color-text-primary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.role==='DOCTOR'?'Dr. ':''}{user?.firstName} {user?.lastName}</div>
+              <div style={{fontSize:'11px',color:'var(--color-text-tertiary)',textTransform:'capitalize'}}>{user?.role?.toLowerCase()}</div>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <LogOut size={16} />
-            Sign out
+          <button onClick={logout} style={{display:'flex',alignItems:'center',gap:'8px',width:'100%',padding:'7px 10px',borderRadius:'8px',border:'none',background:'transparent',cursor:'pointer',fontSize:'12px',color:'var(--color-text-secondary)'}}>
+            <LogOut size={13}/>Sign out
           </button>
         </div>
       </aside>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-8">
-          <Outlet />
-        </div>
-      </main>
+      <main style={{flex:1,overflowY:'auto'}}><Outlet/></main>
     </div>
   )
 }
