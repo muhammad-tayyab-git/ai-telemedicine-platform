@@ -8,8 +8,13 @@ export const authApi = {
 
 // ─── Symptoms ─────────────────────────────────────────────────────────────────
 export const symptomApi = {
+  // enriched analysis — accepts selectedSymptoms[], ageGroup, duration, severity etc.
   analyze:      (data) => api.post('/symptoms/analyze', data),
   getMyReports: ()     => api.get('/symptoms/my-reports'),
+  // context: age-aware, weather-aware symptom list
+  getContext:   (params) => api.get('/symptoms/context', { params }),
+  // cascade: related symptoms for a primary symptom
+  getCascade:   (symptom) => api.get('/symptoms/cascade', { params: { symptom } }),
 }
 
 // ─── Images ───────────────────────────────────────────────────────────────────
@@ -31,6 +36,7 @@ export const appointmentApi = {
 export const patientApi = {
   getProfile:    ()     => api.get('/patients/me'),
   updateProfile: (data) => api.put('/patients/me', data),
+  getDashboard:  ()     => api.get('/patients/dashboard'),
 }
 
 // ─── Doctors ──────────────────────────────────────────────────────────────────

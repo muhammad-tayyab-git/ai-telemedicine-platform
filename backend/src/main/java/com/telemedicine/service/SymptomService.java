@@ -37,17 +37,19 @@ public class SymptomService {
 
         var patient = patientRepository.findByUserId(user.getId())
             .orElseGet(() -> {
-                Patient newPatient = Patient.builder().user(user).build();
-                return patientRepository.save(newPatient);
+                Patient p = Patient.builder().user(user).build();
+                return patientRepository.save(p);
             });
 
-        log.info("Calling AI symptom service for patient: {}", patient.getId());
+        String naturalLanguage = request.toNaturalLanguage();
+        log.info("Calling AI symptom service — symptoms: {}", request.getSelectedSymptoms());
+
         AiServiceClient.SymptomPredictionResponse aiResult =
-            aiServiceClient.analyzeSymptoms(request.getSymptoms());
+            aiServiceClient.analyzeSymptoms(naturalLanguage);
 
         SymptomReport report = SymptomReport.builder()
             .patient(patient)
-            .symptomsText(request.getSymptoms())
+            .symptomsText(naturalLanguage)
             .predictedCondition(aiResult.getPredictedCondition())
             .severityLevel(mapSeverity(aiResult.getSeverityLevel()))
             .confidenceScore(aiResult.getConfidenceScore())
@@ -56,8 +58,7 @@ public class SymptomService {
             .build();
 
         SymptomReport saved = symptomReportRepository.save(report);
-        log.info("Symptom report saved with id: {}", saved.getId());
-
+        log.info("Symptom report saved: {}", saved.getId());
         return mapToResponse(saved);
     }
 
